@@ -1,0 +1,384 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang = "en">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href = "{% static 'style.css' %}" type="text/css" />
+<script src="{% static 'createOrder.js' %}?version=1" type="text/javascript" async></script>
+
+<link rel="apple-touch-icon" sizes="180x180" href= "{% static 'images/apple-touch-icon.png' %}">
+<link rel="icon" type="image/png" sizes="32x32" href="{% static 'images/favicon-32x32.png' %}">
+<link rel="icon" type="image/png" sizes="16x16" href="{% static 'images/favicon-16x16.png' %}"> 
+<link rel="manifest" href="{% static 'images/site.webmanifest' %}">
+
+<title>Title Here</title>
+</html>
+
+<!-- Image modal display <center></center> -->
+<div class="imgmodal" id="myImg">
+    <img src="" alt="Display Empty" id="displayImage" class="imgcontent">
+    <!-- <button type="button" style="width: -webkit-fill-available;">Delete</button> -->
+</div>
+
+<script>
+var typeList = {
+    "4mm":0.968,
+    "5mm":1.21,
+    "6mm":1.45,
+    "8mm":1.93,
+    "10mm":2.42,
+    "12mm":2.90,
+    "15mm":3.63,
+    "19mm":4.60
+}
+
+function addExistingType(id, dataDict = {}){
+    const last_element = document.getElementById("order_field").querySelector("div .flicker_top:last-of-type");
+
+    if (Object.keys(dataDict).length != 0){
+        var txt = document.createElement("textarea");
+        txt.innerHTML = dataDict;
+        dataDict = JSON.parse(txt.value.replaceAll("\'","\""));
+        txt.remove();
+    }
+
+    let count;
+    if (last_element === null) {
+        count = 1;
+    } else{
+        count = Number(last_element.id) + 1;
+    }
+
+    const createButton = document.getElementById("glass_type");
+    
+    const fieldset = document.createElement("div");
+    fieldset.setAttribute("id",count);
+    fieldset.classList.add("flicker_top");
+
+    if (id == "glass_type") {
+        fieldset.innerHTML = `
+        <div class="divRow">
+            <select name="thickness" id="thickness-${count}" style="visibility: hidden;" disabled>
+                <option disabled selected value> -- -- </option>
+                ${Object.entries(typeList).map((item) => `
+                    <option value="${item[0]}">${item[0]}</option>
+                `).join('')}
+            </select>
+            <input class="form label" placeholder="Discription:" disabled>
+            <input class="form small label" placeholder="Rate:" style="width: 40px;" disabled>
+            <input class="form label" placeholder="Chrg:" style="width: 40px;" disabled>
+
+            <select name="unit" id="unit-${count}" style="visibility: hidden;" disabled>
+                <option value="mm" selected>mm</option>
+                <option value="inch">inch</option>
+            </select>
+        </div>
+        <div class="divRow">
+            <select name="thickness" id="thickness-${count}" required>
+                <option disabled selected value> -- -- </option>
+                ${Object.entries(typeList).map((item) => `
+                    <option value="${item[0]}" ${dataDict.thickness == `${item[0]}` ? 'selected':''}> ${item[0]} </option>
+                `).join('')}
+            </select>
+            <input class="form" name="description" placeholder="Discription" value="${dataDict.description ? dataDict.description : ''}">
+            <input class="form small" type="number" name="defaultRate" title="Rate" onchange="setRate(${count})" 
+            placeholder="Rate" id="defaultRate-${count}" min="1" style="width: 40px;" value="${dataDict.defaultRate}">
+
+            <input class="form" type="number" name="defaultChargeable" id="chargeable-${count}" onchange="setChargeableSize(${count})" 
+            placeholder="Chrg" min=0 style="width: 40px;" title="Chargeable Rate" value="${dataDict.defaultChargeable}">
+
+            <select name="unit" id="unit-${count}">
+                <option value="mm" ${dataDict.unit == 'mm' ? 'selected':''}>mm</option>
+                <option value="inch" ${dataDict.unit == 'inch' ? 'selected':''}>inch</option>
+            </select>
+
+            <span class="close un-selectable" title="${count}" id="remove-${count}"
+            onclick="deleteRow(this.title)">&times;</span>
+        </div>
+        
+        <br>
+
+        <div class="divRow head">
+            <input class="form small label" placeholder="Height" disabled></input>
+            <input class="form small label" placeholder="Width" disabled></input>
+            <input class="form small label" placeholder="Chg/Ht" disabled></input>
+            <input class="form small label" placeholder="Chg/Wh" disabled></input>
+            <input class="form small label" placeholder="Quantity" disabled></input>
+            <input class="form small label" placeholder="Rate" disabled></input>
+            <input class="form small label" placeholder="Amount" disabled></input>
+        </div>
+        <button type="button" id="add-${count}" value="${count}"
+        onclick="addNew(this.id,this.value)" style="margin:auto;display:block;">addNew</button>
+        `;
+    } else if (id == "custom_charge"){
+        fieldset.innerHTML = `
+            <div class="divRow">
+                <input name="custom" hidden></input>
+                <input class="form" name="description" placeholder="Discription" value="${dataDict.description}">
+                <input class="form small" style="visibility: hidden;">
+                <input class="form small" style="visibility: hidden;">
+
+                <input class="form small" type="number" name="quantity" id="cust-quantity-${count}" 
+                placeholder="Quantity" value="${dataDict.quantity}">
+                <input class="form small" type="number" name="rate" id="rate-${count}" value="${dataDict.rate}" 
+                onchange="calculateCustomAmount(${count})" placeholder="Rate">
+
+                <input class="form small" type="number" name="amount" id="amount-${count}" 
+                placeholder="Amount" value="${dataDict.amount}">
+                <span class="close un-selectable" title="${count}" id="remove-${count}"
+                onclick="deleteRow(this.title)">&times;</span>
+            </div>
+        `;
+    }
+    document.getElementById("order_field").insertBefore(fieldset,createButton);
+
+}
+
+var miscArray = {
+    "Hole:":["hole",40],
+    "Big Hole:":["bighole",40],
+    "C.S.K Hole:":["cskhole",100],
+    "Cutout:":["cutout",125],
+    "Big Cutout:":["bigcutout",125],
+};
+
+function addExistingNew(addButton_id, fieldset_id,dataDict={}){
+    if (
+        document.getElementById("unit-"+fieldset_id).value === 'mm'
+        && document.getElementById("chargeable-"+fieldset_id).value === ""
+        || document.getElementById("defaultRate-"+fieldset_id).value === ""
+    ){
+        console.log("Error promp!"+"This Error")
+        return
+    }
+
+    if (
+        document.getElementById("unit-"+fieldset_id).value === 'inch'
+        && document.getElementById("defaultRate-"+fieldset_id).value === ""
+    ){
+        console.log("Error promp!")
+        return
+    }
+
+    const fieldset = document.getElementById(fieldset_id);
+
+    if (Object.keys(dataDict).length != 0){
+        var txt = document.createElement("textarea");
+        txt.innerHTML = dataDict;
+        dataDict = JSON.parse(txt.value.replaceAll("\'","\""));
+        txt.remove();
+    }
+
+    const last_element = fieldset.querySelector("div .flicker:last-of-type");
+    let number_count;
+    if (last_element === null) {
+        number_count = 1;
+    } else{
+        number_count = Number(last_element.id.split("-")[1]) + 1;
+    }
+
+    // number_count += 1;
+    const addnewButton = document.getElementById(addButton_id);
+
+    const order_div = document.createElement("div");
+    order_div.setAttribute("id",fieldset_id+"-"+number_count);
+
+    order_div.classList.add("divRow");
+    order_div.classList.add("size");
+    order_div.classList.add("flicker");
+
+    
+    const unit = document.getElementById("unit-"+fieldset_id).value;
+    if (unit == "mm") {
+        order_div.innerHTML = `
+        <input class="form small" type="number" name="height" id="height-${fieldset_id}-${number_count}" min=1 value="${dataDict.height}" 
+        onchange="calculateChargeableSize('${fieldset_id}-${number_count}',${fieldset_id})" placeholder="Height" required>
+        
+        <input class="form small" type="number" name="width" id="width-${fieldset_id}-${number_count}" min=1 value="${dataDict.width}" 
+        onchange="calculateChargeableSize('${fieldset_id}-${number_count}',${fieldset_id})" placeholder="Width" required>
+
+        <input class="form small" type="number" name="chargeable-height" id="chargeable-height-${fieldset_id}-${number_count}" 
+        tabindex="-1" placeholder="Chrg/Height" value="${dataDict['chargeable-height']}" readonly>
+
+        <input class="form small" type="number" name="chargeable-width" id="chargeable-width-${fieldset_id}-${number_count}" 
+        tabindex="-1" placeholder="Chrg/Width" value="${dataDict['chargeable-width']}" readonly>
+
+        <input class="form small" type="number" name="quantity" id="quantity-${fieldset_id}-${number_count}" min=1 value="${dataDict.quantity}" 
+        onchange="calculateAmount('${fieldset_id}-${number_count}',${fieldset_id})" placeholder="Quantity" required>
+
+        <input class="form small" type="number" name="rate" id="rate-${fieldset_id}-${number_count}"
+        placeholder="Rate" value="${document.getElementById(`defaultRate-${fieldset_id}`).value}" readonly>
+
+        <input class="form small" type="number" name="amount" id="amount-${fieldset_id}-${number_count}" 
+        placeholder="Amount" value="${dataDict.amount}" readonly>
+
+        <span class="close un-selectable" title="${fieldset_id}-${number_count}" id="remove-${fieldset_id}-${number_count}" 
+        onclick="deleteRow(this.title)">&times;</span>
+
+        <span class="collapsible un-selectable" title="${fieldset_id}-${number_count}" id="collapse-${fieldset_id}-${number_count}" onclick="collapse(this.title)">&#43;</span>
+
+        ${Object.entries(miscArray).map((item) => `
+            <div class="divRow" style="display:${dataDict[item[1][0]] ? 'block' : 'none'};" id="${item[1][0]}-${fieldset_id}-${number_count}">
+                <input class="form small" style="visibility: hidden;">
+                <input class="form small" style="visibility: hidden;">
+                <input class="form small" style="visibility: hidden;">
+
+                <input class="form small label" type="number" name="${item[1][0]}" id="${item[1][0]}-label" style="text-align:right;" 
+                placeholder="${item[0]}" disabled></input>
+
+                <input class="form small" type="number" name="quantity" id="${item[1][0]}-quantity-${fieldset_id}-${number_count}" min=1 
+                onchange="calculateMiscAmount(this.id)" placeholder="Quantity" ${dataDict[item[1][0]] ? `value='${dataDict[item[1][0]].quantity}'` : 'disabled'}>
+
+                <input class="form small" type="number" name="rate" id="${item[1][0]}-rate-${fieldset_id}-${number_count}" 
+                value="${item[1][1]}" placeholder="Rate" readonly ${dataDict[item[1][0]] ? `value='${dataDict[item[1][0]].rate}'` : 'disabled'}>
+
+                <input class="form small" type="number" name="amount" id="${item[1][0]}-amount-${fieldset_id}-${number_count}" 
+                placeholder="Amount" readonly ${dataDict[item[1][0]] ? `value='${dataDict[item[1][0]].amount}'` : 'disabled'}>
+            </div>
+            `).join('')}
+
+        <div class="divRow content" id="collapse_content-${fieldset_id}-${number_count}">
+            ${Object.entries(miscArray).map((item) => `
+            <label for="hole">${item[0]}
+                <input type="checkbox" id="${item[1][0]}-${fieldset_id}-${number_count}" 
+                onchange="show_hide(this.id)" ${dataDict[item[1][0]] ? 'checked' : ''}>
+            </label>
+            `).join('')}
+        </div>
+        `;
+    } else if (unit == "inch"){
+        order_div.innerHTML = `
+        <input class="form small" type="number" name="height" id="height-${fieldset_id}-${number_count}" 
+        step="any" min="1" placeholder="Height" required>
+
+        <input class="form small" type="number" name="width" id="width-${fieldset_id}-${number_count}" 
+        step="any" min="1" placeholder="Width" required>
+        
+        <input class="form small" style="visibility: hidden;">
+        <input class="form small" style="visibility: hidden;">
+
+        <input class="form small" type="number" name="quantity" id="quantity-${fieldset_id}-${number_count}" 
+        onchange="calculateAmount('${fieldset_id}-${number_count}',${fieldset_id})" placeholder="Quantity" required>
+
+        <input class="form small" type="number" name="rate" id="rate-${fieldset_id}-${number_count}" 
+        placeholder="Rate" value="${document.getElementById(`defaultRate-${fieldset_id}`).value}" readonly>
+
+        <input class="form small" type="number" name="amount" id="amount-${fieldset_id}-${number_count}" placeholder="Amount" readonly>
+
+        <span class="close un-selectable" title="${fieldset_id}-${number_count}" id="remove-${fieldset_id}-${number_count}" 
+        onclick="deleteRow(this.title)">&times;</span>
+        `;
+    }
+
+    fieldset.insertBefore(order_div,addnewButton);
+}
+
+function saveImage(imgURl){
+    var addImage = document.getElementById("thumbnails");
+
+    img = document.createElement("img");
+    img.setAttribute("src",imgURl);
+    img.setAttribute("alt","error");
+    img.classList.add("thumbnail")
+    img.classList.add("flicker");
+
+    img.setAttribute("onclick","openDisplay(this.src)");
+
+    hiddenInput = document.createElement("input");
+    hiddenInput.setAttribute("name","image");
+    hiddenInput.setAttribute("value",imgURl);
+    hiddenInput.setAttribute("hidden",true);
+    img.appendChild(hiddenInput)
+
+    addImage.appendChild(img);
+
+}
+
+</script>
+
+<div id="orderContainer">
+    <form onsubmit=submitForm(event) id="displayForm">
+        <fieldset class="form">
+            <fieldset class="form noborder paddingsmall" style="float:right;">
+                <label class="form" for="bill_id">Bill ID:
+                    <input class="form" type="number" style="width: 60px" 
+                    name="bill_id" id="bill_id" readonly value={{data.bill_id}}>
+                </label><br>
+                <label class="form" for="order_id">Order ID:
+                    <input class="form" type="number" style="width: 60px" 
+                    name="order_id" id="order_id" value={{data.order_id}}>
+                </label><br>
+                <label class="form" for="date" style="float:right;">Date:
+                    <input class="form" type="date" name="date" id="date" value={{data.date}}>
+                </label>
+            </fieldset>
+            
+            <fieldset class="form noborder paddingsmall" style="float:left;">
+                <label class="form" for="name">Name:
+                    <input class="form" type="text" name="name" id="name" value="{{data.name}}">
+                </label>
+                <label class="form" for="customer_number">Number:
+                    <input class="form" type="tel" style="width: 15ch;" name="customer_number" 
+                    id="customer_number" value="{{data.customer_number}}">
+                </label><br>
+                <label class="form" for="customer_name">Customer Name:
+                    <input class="form" type="text" name="customer_name" id="customer_name"
+                    value="{{data.customer_name}}">
+                </label><br>
+                <label class="form" for="address">Address:
+                    <input class="form" type="text" name="address" id="address" value="{{data.address}}">
+                </label>
+            </fieldset>
+        </fieldset>
+        
+        <fieldset class="form" id="order_field">
+            {% for index, i in data.thickness.items %}
+                <script>
+                    addExistingType("glass_type",dataDict="{{i}}")
+                </script>
+                {% for v in i.sizes.values %}
+                    <script>
+                        addExistingNew('add-{{index|add:1}}','{{index|add:1}}',dataDict='{{v}}')
+                    </script>
+                {% endfor %}
+            {% endfor %}
+            {% for i in data.custom.values %}
+                <script>
+                    addExistingType("custom_charge",dataDict="{{i}}")
+                </script>
+            {% endfor %}
+            <button type="button" id="glass_type" onclick=addType(this.id)>Create</button>
+            <button type="button" id="custom_charge" onclick=addType(this.id)>Create Custom</button>
+        </fieldset>
+
+        <fieldset class="form">
+            <fieldset class="form" style="float: left;">
+                <label class="form" id="dropZone"> Drop images: </label>
+                <br>
+                <div class="divRow" id="thumbnails">
+                    {% for i in data.image %}
+                        <script>
+                            saveImage("{{i}}")
+                        </script>
+                    {% endfor %}
+                </div>
+            </fieldset>
+
+            <fieldset style="float: right;" class="smallwidth">
+                <label class="" for="total_quantity"> Total Quantity:
+                    <input class="" type="number" name="total_quantity" id="total_quantity" value="{{data.total_quantity}}">
+                </label><br>
+                <label class="" for="total_hole"> Total Hole:
+                    <input class="" type="number" name="total_hole" id="total_hole" value="{{data.total_hole}}">
+                </label><br>
+                <label class="" for="total_hole"> Total Cutout:
+                    <input class="" type="number" name="total_cutout" id="total_cutout" value="{{data.total_cutout}}">
+                </label><br>
+                <label class="" for="total_amount"> Total Amount:
+                    <input class="" type="number" name="total_amount" id="total_amount" value="{{data.total_amount}}">
+                </label>
+            </fieldset>
+
+        </fieldset>
+        <input class="form" type="submit" value="Save">
+    </form>
+</div>

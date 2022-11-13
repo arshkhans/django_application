@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html>
+<head>
+<!-- <meta name="viewport" content="width=device-width, initial-scale=1"> -->
+<style>
+body {font-family: Arial, Helvetica, sans-serif;}
+
+/* The Modal (background) */
+.modal {
+	display: none; /* Hidden by default */
+	position: fixed; /* Stay in place */
+	z-index: 1; /* Sit on top */
+	padding-top: 16px; /* Location of the box */
+	left: 0;
+	top: 0;
+	width: 100%; /* Full width */
+	height: 100%; /* Full height */
+	overflow: auto; /* Enable scroll if needed */
+	background-color: rgb(0,0,0); /* Fallback color */
+	background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+}
+
+/* Modal Content */
+.modal-content {
+	text-align: center;
+	position: relative;
+	margin: auto;
+	padding: 0;
+	width: 70%;
+	background-color: #fff;
+    background-clip: padding-box;
+    border: 1px solid rgba(0,0,0,.2);
+    border-radius: .3rem;
+	/* box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19); */
+	-webkit-animation-name: animatetop;
+	-webkit-animation-duration: 0.4s;
+	animation-name: animatetop;
+	animation-duration: 0.4s
+}
+
+/* Add Animation */
+@-webkit-keyframes animatetop {
+	from {top:-300px; opacity:0} 
+	to {top:0; opacity:1}
+}
+
+@keyframes animatetop {
+	from {top:-300px; opacity:0}
+	to {top:0; opacity:1}
+}
+
+/* The Close Button */
+.close {
+	float: right;
+	font-size: 28px;
+	font-weight: bold;
+}
+
+.close:hover, .close:focus {
+	color: grey;
+	text-decoration: none;
+	cursor: pointer;
+}
+
+.modal-header {
+	padding: 2px 16px;
+	background-color: #5cb85c;
+	color: white;
+}
+
+.modal-body {
+	padding: 2px 16px;
+}
+
+.modal-footer {
+	padding: 2px 16px;
+	background-color: #5cb85c;
+	color: white;
+}
+
+.un-selectable {
+    -webkit-user-select: none; /* Safari */
+    -ms-user-select: none; /* IE 10 and IE 11 */
+    user-select: none; /* Standard syntax */
+}
+.radio-button input[type="radio"] {
+    display: none;
+}      
+.radio-button label {
+    display: inline-block;
+    padding: 4px 11px;
+    font-family: Arial;
+    font-size: 18px;
+    cursor: pointer;
+}      
+.radio-button input[type="radio"]:checked+label {
+    color: red;
+}
+
+.bottom-left {
+    transform: rotate(45deg)
+}
+.top-left {
+    transform: rotate(135deg)
+}
+.top-right {
+    transform: rotate(225deg)
+}
+.bottom-right  {
+    transform: rotate(315deg)
+}
+</style>
+</head>
+<body>
+
+<h2>Animated Modal with Header and Footer</h2>
+
+<!-- Trigger/Open The Modal -->
+<button type="button" id="myBtn" value="thisF" onclick=showCanvas(this.value)>Open Modal</button>
+<button type="button" id="myBtn" value="thisG" onclick=showCanvas(this.value)>Open Modal</button>
+
+<div id="myModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-body un-selectable">
+		<button type="button" onclick=history.undoButton()>Undo</button>
+		<button type="button" onclick=history.redoButton()>Redo</button>
+		<span class="close" id="canvasClose">&times;</span>
+
+		<div class="radio-button">
+			<input type="radio" name="options" id="draw" checked="checked">
+			<label for="draw"> Pensil </label>
+			<input type="radio" name="options" id="line">
+			<label for="line"> Line </label>
+			<input type="radio" name="options" id="rectangle">
+			<label for="rectangle"> Rectangle </label>
+			<input type="radio" name="options" id="circle">
+			<label for="circle" > Circle </label>
+			<input type="radio" name="options" id="arc">
+			<label for="arc" id="rotatingArc" onclick=change(this.id)> Arc </label>
+			<input type="radio" name="options" id="text">
+			<label for="text"> Text </label>
+			<input type="radio" name="options" id="erase">
+			<label for="erase"> Erase </label>
+		</div>
+	
+		<canvas id="myCanvas" width="700" height="500" style="border:1px solid #000000;" onmouseover=draw()>
+		</canvas>
+		<div>
+			<button type="button" onclick=clearCanvas()>clr</button>
+			<button type="button" id="canvasSaveButton" onclick=saveCanvas()>save</button>
+			<button type="button" onclick=add_pixel()>+</button>
+			<button type="button" onclick=reduce_pixel()>-</button>
+		</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+
+console.log(window.innerWidth);
+// Get the modal
+var modal = document.getElementById("myModal");
+var span = document.getElementById("canvasClose");
+
+
+function showCanvas(value){
+	modal.style.display = "block";
+	document.getElementById("canvasSaveButton").value = value;
+}
+
+// When the user clicks on <span> (x), close the modal
+span.onclick = function() {
+  modal.style.display = "none";
+  
+}
+
+// When the user clicks anywhere outside of the modal, close it
+window.onclick = function(event) {
+	if (event.target == modal) {
+		modal.style.display = "none";
+	}
+}
+</script>
+
+<script>
+    const quadrants = ["bottom-left", "top-left", "top-right", "bottom-right"];
+    let current_quadrant = "";
+    let quad_count = 0
+
+    var canvas = document.getElementById("myCanvas");
+    var ctx = canvas.getContext("2d");
+    var width = canvas.width, height = canvas.height;
+    var curX, curY, prevX, prevY;
+    var hold = false;
+    var fill_value = true, stroke_value = false;
+    ctx.lineWidth = 2;
+
+    class canvasHistroy{
+        constructor(canvas, ctx, maxsize){
+            this.canvas = canvas;
+            this.ctx = ctx;
+            this.maxsize = maxsize;
+            this.sessionArray = [];
+            this.current_session = -1;
+        }
+        saveSession(){
+            if (this.sessionArray.length >= this.maxsize){
+                this.sessionArray.shift();
+                this.current_session -= 1;
+            }
+
+            if (this.current_session != -1){
+                if(this.current_session != this.sessionArray.length - 1){
+                    while (this.current_session != this.sessionArray.length - 1){
+                        this.sessionArray.pop();
+                    }
+                }
+            }
+                
+            this.sessionArray[this.current_session+1] = ctx.getImageData(0, 0, width, height);
+            this.current_session += 1;
+            console.log("Save");
+            console.log(this.current_session,this.sessionArray);
+        }
+        undoButton(){
+            if (this.current_session > 0){
+                this.ctx.putImageData(this.sessionArray[this.current_session-1], 0, 0);
+                this.current_session -= 1;
+            }
+            console.log("Undo");
+            console.log(this.current_session,this.sessionArray);
+        }
+        redoButton(){
+            if (this.current_session < this.maxsize-1){
+                this.ctx.putImageData(this.sessionArray[this.current_session+1], 0, 0);
+                this.current_session += 1;
+            }
+            console.log("Redo");
+            console.log(this.current_session,this.sessionArray);
+        }
+    }
+
+    const history = new canvasHistroy(canvas,ctx,10);
+    history.saveSession();
+
+    function clearCanvas(){
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function saveCanvas(){
+        const img = document.getElementById("canvasImg");
+        img.src = canvas.toDataURL();
+    }
+            
+    function add_pixel(){
+        ctx.lineWidth += 1;
+    }
+            
+    function reduce_pixel(){
+        if (ctx.lineWidth == 2)
+            return;
+        else
+            ctx.lineWidth -= 1;
+    }
+                
+    function reset(){
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function change(id){
+        if (document.getElementById("arc").checked){
+            if (quad_count >= quadrants.length)
+                quad_count = 0;
+            current_quadrant = quadrants[quad_count];
+            document.getElementById(id).className = current_quadrant;
+            quad_count += 1;
+        }
+    }
+    
+    function draw(e){
+        ctx.strokeStyle = "#000000";
+        if (document.getElementById("draw").checked) {
+            canvas.onmousedown = function (e){
+				curX = event.clientX - canvas.getBoundingClientRect().left;
+        		curY = event.clientY - canvas.getBoundingClientRect().top;
+                hold = true;
+                ctx.beginPath();
+                ctx.moveTo(curX, curY);
+            };
+            canvas.onmousemove = function (e){
+                if(hold){
+					curX = event.clientX - canvas.getBoundingClientRect().left;
+					curY = event.clientY - canvas.getBoundingClientRect().top;
+                    draw();
+                }
+            };
+            canvas.onmouseup = function (e){
+                hold = false;
+                history.saveSession();
+            };
+            canvas.onmouseout = function (e){
+                hold = false;
+            };
+            function draw (){
+                ctx.lineTo(curX, curY);
+                ctx.stroke();
+            }
+
+        } else if (document.getElementById("line").checked) {
+            canvas.onmousedown = function (e){
+                img = ctx.getImageData(0, 0, width, height);
+                console.log(img)
+                prevX = e.clientX - canvas.getBoundingClientRect().left;
+                prevY = e.clientY - canvas.getBoundingClientRect().top;
+                hold = true;
+            };
+            canvas.onmousemove = function (e){
+                if (hold){
+                    ctx.putImageData(img, 0, 0);
+                    curX = e.clientX - canvas.getBoundingClientRect().left;
+                    curY = e.clientY - canvas.getBoundingClientRect().top;
+                    ctx.beginPath();
+                    ctx.moveTo(prevX, prevY);
+                    ctx.lineTo(curX, curY);
+                    ctx.stroke();
+                    ctx.closePath();
+                }
+            };
+            canvas.onmouseup = function (e){
+                hold = false;
+                history.saveSession();
+            };
+            canvas.onmouseout = function (e){
+                hold = false;
+            };
+
+        } else if (document.getElementById("rectangle").checked) {
+            canvas.onmousedown = function (e){
+                img = ctx.getImageData(0, 0, width, height);
+                prevX = e.clientX - canvas.getBoundingClientRect().left;
+                prevY = e.clientY - canvas.getBoundingClientRect().top;
+                hold = true;
+            };
+            canvas.onmousemove = function (e){
+                if (hold){
+                    ctx.putImageData(img, 0, 0);
+                    curX = e.clientX - canvas.getBoundingClientRect().left - prevX;
+                    curY = e.clientY - canvas.getBoundingClientRect().top - prevY;
+                    ctx.strokeRect(prevX, prevY, curX, curY);
+                }
+            };
+            canvas.onmouseup = function (e){
+                hold = false;
+                history.saveSession();
+            };
+            canvas.onmouseout = function (e){
+                hold = false;
+            };
+
+        } else if (document.getElementById("circle").checked) {
+            
+            canvas.onmousedown = function (e){
+                img = ctx.getImageData(0, 0, width, height);
+                prevX = e.clientX - canvas.getBoundingClientRect().left;
+                prevY = e.clientY - canvas.getBoundingClientRect().top;
+                hold = true;
+            };
+                    
+            canvas.onmousemove = function (e){
+                if (hold){
+                    ctx.putImageData(img, 0, 0);
+                    curX = e.clientX - canvas.getBoundingClientRect().left;
+                    curY = e.clientY - canvas.getBoundingClientRect().top;
+                    ctx.beginPath();
+                    ctx.arc(Math.abs(curX + prevX)/2, Math.abs(curY + prevY)/2, 
+                        Math.sqrt(Math.pow(curX - prevX, 2) + Math.pow(curY - prevY, 2))/2, 0, Math.PI * 2, true);
+                    ctx.closePath();
+                    ctx.stroke();
+                }
+            };
+                    
+            canvas.onmouseup = function (e){
+                hold = false;
+                history.saveSession();
+            };
+                    
+            canvas.onmouseout = function (e){
+                hold = false;
+            };
+
+        } else if (document.getElementById("text").checked) {
+
+            canvas.onmousedown = function (e){
+                curX = e.clientX - canvas.getBoundingClientRect().left;
+                curY = e.clientY - canvas.getBoundingClientRect().top;
+
+                let value = prompt("Enter Text", "haha");
+                ctx.font = "20px Arial";
+                ctx.fillText(value, curX, curY);
+            };
+
+        } else if (document.getElementById("erase").checked) {
+            canvas.onmousedown = function (e){
+                curX = e.clientX - canvas.getBoundingClientRect().left;
+                curY = e.clientY - canvas.getBoundingClientRect().top;
+                hold = true;
+                
+                prevX = curX;
+                prevY = curY;
+                ctx.beginPath();
+                ctx.moveTo(prevX, prevY);
+            };
+        
+            canvas.onmousemove = function (e){
+                if(hold){
+                    curX = e.clientX - canvas.getBoundingClientRect().left;
+                    curY = e.clientY - canvas.getBoundingClientRect().top;
+                    draw();
+                }
+            };
+        
+            canvas.onmouseup = function (e){
+                hold = false;
+                history.saveSession();
+            };
+                
+            canvas.onmouseout = function (e){
+                hold = false;
+            };
+        
+            function draw (){
+                ctx.lineTo(curX, curY);
+                ctx.strokeStyle = "#ffffff";
+                ctx.stroke();
+            }
+        } else if (document.getElementById("arc").checked) {
+
+            canvas.onmousedown = function (e){
+                img = ctx.getImageData(0, 0, width, height);
+                prevX = e.clientX - canvas.getBoundingClientRect().left;
+                prevY = e.clientY - canvas.getBoundingClientRect().top;
+                hold = true;
+            };
+                    
+            canvas.onmousemove = function (e){
+                if (hold){
+                    ctx.putImageData(img, 0, 0);
+                    curX = e.clientX - canvas.getBoundingClientRect().left;
+                    curY = e.clientY - canvas.getBoundingClientRect().top;
+                    switch (current_quadrant) {
+                        case "bottom-left":
+                            s = Math.PI * 1.5, e = 0;
+                            break;
+                        case "top-left":
+                            s = 0, e = Math.PI * 0.5;
+                            break;
+                        case "top-right":
+                            s = Math.PI * 0.5, e = Math.PI * 1;
+                            break;
+                        case "bottom-right":
+                            s = Math.PI * 1, e = Math.PI * 1.5;
+                            break;
+                        default:
+                            console.log("error in arc")
+                            break;
+                    }
+                    ctx.beginPath();
+                    ctx.arc(Math.abs(curX + prevX)/2, Math.abs(curY + prevY)/2,
+                        Math.sqrt(Math.pow(curX - prevX, 2) + Math.pow(curY - prevY, 2))/2,s , e, false);
+                    ctx.stroke();
+                }
+            };
+                    
+            canvas.onmouseup = function (e){
+                hold = false;
+                history.saveSession();
+            };
+                    
+            canvas.onmouseout = function (e){
+                // hold = false;
+            };
+
+        }
+    }
+
+</script>
+
+
+<script>
+    async function testConn() {
+        var raw = "";
+
+        var requestOptions = {
+            method: 'POST',
+            body: raw,
+            mode: 'no-cors',
+        };
+
+        const response = await fetch("http://localhost:9000", requestOptions);
+        console.log(response.text());
+    }
+    
+</script>
+
+<button type="button" onclick=testConn()>Test Conn</button>
+
+</body>
+</html>

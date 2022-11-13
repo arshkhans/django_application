@@ -1,0 +1,103 @@
+{% load static %}
+<!-- 1024 768 -->
+<!DOCTYPE html>
+<html lang = "en">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href = "{% static 'style.css' %}" type="text/css" />
+<script src="{% static 'createOrder.js' %}?version=1" type="text/javascript" async></script>
+
+<link rel="apple-touch-icon" sizes="180x180" href= "{% static 'images/apple-touch-icon.png' %}">
+<link rel="icon" type="image/png" sizes="32x32" href="{% static 'images/favicon-32x32.png' %}">
+<link rel="icon" type="image/png" sizes="16x16" href="{% static 'images/favicon-16x16.png' %}"> 
+<link rel="manifest" href="{% static 'images/site.webmanifest' %}">
+
+<title>Title Here</title>
+</html>
+
+<!-- Image modal display <center></center> -->
+<div class="imgmodal" id="myImg">
+    <img src="" alt="Display Empty" id="displayImage" class="imgcontent">
+    <!-- <button type="button" style="width: -webkit-fill-available;">Delete</button> -->
+</div>
+
+<div id="orderContainer">
+    <form onsubmit=submitForm(event) id="displayForm">
+        <fieldset class="form">
+            <fieldset class="form noborder paddingsmall" style="float:right;">
+                <label class="form" for="bill_id">Bill ID:
+                    <input class="form" type="number" value="{{bill_id}}" style="width: 60px" 
+                    name="bill_id" id="bill_id" readonly>
+                </label><br>
+                <label class="form" for="order_id">Order ID:
+                    <input class="form" type="number" style="width: 60px" 
+                    name="order_id" id="order_id">
+                </label><br>
+                <label class="form" for="date" style="float:right;">Date:
+                    <input class="form" type="date" name="date" id="date">
+                </label>
+            </fieldset>
+
+            <script>
+                document.getElementById("date").value = new Date().toJSON().slice(0,10);
+                function setName(str) {
+                    document.getElementById("customer_name").value = str;
+                }
+            </script>
+            
+            <fieldset class="form noborder paddingsmall" style="float:left;">
+
+                <label class="form" for="name">Name:
+                    <input class="form noarrow" type="text" name="name" id="name" 
+                    onchange=setName(this.value) list="names" autocomplete="stop">
+                    <datalist id="names">
+                        {% for n in names %}
+                            <option value="{{n}}">
+                        {% endfor %}
+                    </datalist>
+                </label>
+                <!-- <label class="form" for="name">Name:
+                    <input class="form" type="text" name="name" id="name" onchange=setName(this.value)>
+                </label> -->
+                <label class="form" for="customer_number">Number:
+                    <input class="form" type="tel" style="width: 15ch;" name="customer_number" id="customer_number">
+                </label><br>
+                <label class="form" for="customer_name">Customer Name:
+                    <input class="form" type="text" name="customer_name" id="customer_name">
+                </label><br>
+                <label class="form" for="address">Address:
+                    <input class="form" type="text" name="address" id="address">
+                </label>
+            </fieldset>
+        </fieldset>
+        
+        <fieldset class="form" id="order_field">
+            <button type="button" id="glass_type" onclick=addType(this.id)>Create</button>
+            <button type="button" id="custom_charge" onclick=addType(this.id)>Create Custom</button>
+        </fieldset>
+
+        <fieldset class="form">
+            <fieldset class="form" style="float: left;">
+                <label class="form" id="dropZone"> Drop images: </label>
+                <br>
+                <div class="divRow" id="thumbnails"></div>
+            </fieldset>
+
+            <fieldset style="float: right;" class="smallwidth">
+                <label class="" for="total_quantity"> Total Quantity:
+                    <input class="" type="number" name="total_quantity" id="total_quantity">
+                </label><br>
+                <label class="" for="total_hole"> Total Hole:
+                    <input class="" type="number" name="total_hole" id="total_hole">
+                </label><br>
+                <label class="" for="total_hole"> Total Cutout:
+                    <input class="" type="number" name="total_cutout" id="total_cutout">
+                </label><br>
+                <label class="" for="total_amount"> Total Amount:
+                    <input class="" type="number" name="total_amount" id="total_amount">
+                </label>
+            </fieldset>
+
+        </fieldset>
+        <input class="form" type="submit" value="Save">
+    </form>
+</div>

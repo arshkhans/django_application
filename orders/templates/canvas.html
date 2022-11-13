@@ -1,0 +1,51 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang = "en">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href = "{% static 'style.css' %}" type="text/css" />
+<script src="{% static 'canvas.js' %}?version=1" type="text/javascript" async></script>
+
+<link rel="apple-touch-icon" sizes="180x180" href= "{% static 'images/apple-touch-icon.png' %}">
+<link rel="icon" type="image/png" sizes="32x32" href="{% static 'images/favicon-32x32.png' %}">
+<link rel="icon" type="image/png" sizes="16x16" href="{% static 'images/favicon-16x16.png' %}"> 
+<link rel="manifest" href="{% static 'images/site.webmanifest' %}">
+
+<title>Canvas</title>
+</html>
+
+<div id="myModal" class="modal divRow">
+    <div class="modal-content divRow">
+      <div class="modal-body un-selectable divRow">
+          <button type="button" onclick=history.undoButton()>Undo</button>
+          <button type="button" onclick=history.redoButton()>Redo</button>
+          <span class="close" id="canvasClose">&times;</span>
+  
+          <div class="radio-button divRow">
+              <input type="radio" name="options" id="draw" checked="checked">
+              <label for="draw"> Pensil </label>
+              <input type="radio" name="options" id="line">
+              <label for="line"> Line </label>
+              <input type="radio" name="options" id="rectangle">
+              <label for="rectangle"> Rectangle </label>
+              <input type="radio" name="options" id="circle">
+              <label for="circle" > Circle </label>
+              <input type="radio" name="options" id="arc">
+              <label for="arc" id="rotatingArc" onclick=myCanvas.change(this.id)> Arc </label>
+              <input type="radio" name="options" id="text">
+              <label for="text"> Text </label>
+              <input type="radio" name="options" id="erase">
+              <label for="erase"> Erase </label>
+          </div>
+          <canvas id="myCanvas" width="700" height="500" onmouseover=myCanvas.draw()>
+          </canvas>
+          <div class="divRow">
+              <button type="button" onclick=myCanvas.clearCanvas()>clr</button>
+              <button type="button" id="canvasSaveButton" onclick=saveCanvas(this.value)>save</button>
+              <input type="range" min="1" max="5" value="2" id="lineWidth" onchange=myCanvas.add_pixel(this.value)>
+          </div>
+      </div>
+    </div>
+</div>
+
+<button type="button" value="${fieldset_id}-${number_count}" 
+onclick="showCanvas(this.value)">Open Canvas</button>
