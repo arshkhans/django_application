@@ -2,10 +2,14 @@ from django.shortcuts import render
 from django.http import JsonResponse, HttpResponse
 from utils import get_db_cursor
 from rest_framework.exceptions import APIException
+from django.views.decorators.csrf import csrf_protect
 import json
 
 def test(request):
     return render(request, 'test.html')
+
+def login(request):
+    return render(request, 'login.html')
 
 def orders(request):
     cursor = get_db_cursor("DjangoWeb","2022")
@@ -112,6 +116,7 @@ def createOrder(request):
     cursor = get_db_cursor("DjangoWeb","2022")
     if cursor.count_documents({}) == 0:
         newId = 1
+        names = []
     else:
         newId = int(cursor.find_one({},sort=[("bill_id", -1 )],collation={"locale":"en_US", "numericOrdering": True})["bill_id"]) + 1
         names = cursor.distinct("name")
@@ -121,6 +126,7 @@ def createOrder(request):
     }
     return render(request, 'createOrder.html', context)
 
+@csrf_protect
 def saveOrder(request):
     cursor = get_db_cursor("DjangoWeb","2022")
     formJson = json.loads(request.body.decode("utf-8"))

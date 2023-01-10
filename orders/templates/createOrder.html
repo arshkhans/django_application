@@ -21,7 +21,8 @@
 </div>
 
 <div id="orderContainer">
-    <form onsubmit=submitForm(event) id="displayForm">
+    <form onsubmit=submitForm(event) id="displayForm" method="post">
+        {% csrf_token %}
         <fieldset class="form">
             <fieldset class="form noborder paddingsmall" style="float:right;">
                 <label class="form" for="bill_id">Bill ID:

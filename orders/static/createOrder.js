@@ -484,6 +484,8 @@ async function submitForm(data){
         } else if(pair[0] === "total_quantity"){
             appendTo = "main"
             formJson[pair[0]] = pair[1]
+        } else if(pair[0] === "csrfmiddlewaretoken"){
+            formJson[pair[0]] = pair[1]
         }
 
         switch (appendTo) {
@@ -513,7 +515,8 @@ async function submitForm(data){
     console.log(formJson);
     const response = await fetch('/saveOrder/', {
         method: 'POST',
-        body: JSON.stringify(formJson)
+        body: JSON.stringify(formJson),
+        headers: { "X-CSRFToken": formJson['csrfmiddlewaretoken'] }
     });
     if (response.status == 200){
         alert("Saved")
